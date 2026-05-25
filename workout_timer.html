@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Workout Timer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f3;color:#1a1a1a;padding:1.5rem 1rem;min-height:100vh}
+.app{max-width:680px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin-bottom:1.25rem;color:#1a1a1a}
+.tabs{display:flex;border:1px solid #ddd;border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+.tab{flex:1;padding:10px;font-size:14px;font-weight:500;border:none;background:transparent;cursor:pointer;color:#666;transition:all .15s}
+.tab.active{background:#ececea;color:#1a1a1a}
+.tab:not(:last-child){border-right:1px solid #ddd}
+.section{display:none}.section.active{display:block}
+.card{background:#fff;border:1px solid #e0e0de;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.row label{font-size:13px;color:#666;min-width:90px}
+.row input[type=number]{width:70px;padding:6px 8px;border:1px solid #ccc;border-radius:7px;font-size:14px;background:#fff;color:#1a1a1a}
+.row input[type=text]{flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:7px;font-size:14px;background:#fff;color:#1a1a1a}
+.row select{padding:6px 8px;border:1px solid #ccc;border-radius:7px;font-size:14px;background:#fff;color:#1a1a1a;flex:1}
+.btn{padding:8px 16px;border:1px solid #ccc;border-radius:8px;font-size:13px;cursor:pointer;background:transparent;color:#1a1a1a;display:inline-flex;align-items:center;gap:6px;transition:background .15s}
+.btn:hover{background:#f0f0ee}
+.btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn.primary:hover{opacity:.85}
+.btn.danger{color:#c0392b;border-color:#e0b0ae}
+.btn.danger:hover{background:#fdf0ee}
+.btn.sm{padding:4px 10px;font-size:12px}
+.work-names-box{margin-top:6px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}
+.wn-row{display:flex;align-items:center;gap:8px}
+.wn-row label{font-size:12px;color:#666;min-width:68px;white-space:nowrap}
+.wn-row input{flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:7px;font-size:13px;background:#fff;color:#1a1a1a}
+.work-names-toggle{font-size:12px;color:#888;cursor:pointer;text-decoration:underline;margin-bottom:8px;display:inline-block}
+.block-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;min-height:20px}
+.block-item{background:#f5f5f3;border-radius:8px;padding:10px 12px;font-size:13px}
+.block-item-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.work-badge{background:#EAF3DE;color:#27500A}
+.rest-badge{background:#E6F1FB;color:#0C447C}
+.recover-badge{background:#FAEEDA;color:#633806}
+.block-item .times{font-weight:500}
+.block-item .reps{color:#888}
+.block-item .remove{margin-left:auto;cursor:pointer;color:#aaa;font-size:20px;line-height:1;border:none;background:none;padding:0 4px;flex-shrink:0}
+.block-item .remove:hover{color:#c0392b}
+.block-item .ex-names{font-size:11px;color:#aaa;margin-top:4px;padding-left:2px}
+.saved-list{display:flex;flex-direction:column;gap:8px}
+.saved-item{background:#f5f5f3;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;transition:background .15s}
+.saved-item:hover{background:#ececea}
+.sname{font-weight:500;flex:1}
+.sinfo{color:#888;font-size:12px}
+.empty{color:#aaa;font-size:13px;padding:.5rem 0;text-align:center}
+/* TIMER */
+.timer-screen{padding:1.25rem 1rem 1rem;text-align:center}
+.t-phase-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:.5rem}
+.t-phase-pill{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.pill-work{background:#EAF3DE;color:#27500A}
+.pill-rest{background:#E6F1FB;color:#185FA5}
+.pill-recover{background:#FAEEDA;color:#854F0B}
+.pill-done{background:#ececea;color:#888}
+.t-step{font-size:12px;color:#aaa}
+.t-exname{font-size:28px;font-weight:600;color:#1a1a1a;min-height:36px;margin:.2rem 0 .6rem;letter-spacing:-.01em}
+.t-time{font-size:80px;font-weight:400;line-height:1;font-variant-numeric:tabular-nums;color:#1a1a1a;margin-bottom:.75rem}
+.t-time.pulse{animation:blink .12s ease-out}
+@keyframes blink{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+.progress-wrap{background:#ececea;border-radius:20px;height:7px;overflow:hidden;margin-bottom:.5rem}
+.progress-fill{height:100%;border-radius:20px;background:#1a1a1a}
+.t-totale{font-size:12px;color:#aaa;margin-bottom:1.1rem}
+.ctrl-row{display:flex;gap:10px;justify-content:center;margin-bottom:.25rem}
+.ctrl-btn{width:52px;height:52px;border-radius:50%;border:1px solid #ddd;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#1a1a1a;transition:background .15s}
+.ctrl-btn:hover{background:#f0f0ee}
+.ctrl-btn.big{width:68px;height:68px;font-size:26px;background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.ctrl-btn.big:hover{opacity:.85}
+.sequence-preview{display:flex;flex-direction:column;gap:3px;max-height:190px;overflow-y:auto}
+.seq-row{display:flex;gap:6px;align-items:center;padding:5px 8px;border-radius:7px;font-size:12px}
+.seq-row.active-step{background:#ececea;border:1px solid #ddd}
+.seq-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-work{background:#639922}.dot-rest{background:#378ADD}.dot-recover{background:#BA7517}
+.name-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.name-row input{flex:1;padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a}
+.section-title{font-size:15px;font-weight:500;margin-bottom:.75rem}
+.h-sep{border:none;border-top:1px solid #eee;margin:1rem 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>⏱ Workout Timer</h1>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('config')">⚙ Configura</button>
+    <button class="tab" onclick="showTab('saved')">📁 Salvati</button>
+    <button class="tab" onclick="showTab('timer')">▶ Timer</button>
+  </div>
+
+  <!-- CONFIG -->
+  <div id="tab-config" class="section active">
+    <div class="card">
+      <div class="name-row">
+        <input id="workout-name" type="text" placeholder="Nome allenamento (es. HIIT mattina)" />
+      </div>
+      <p class="section-title">Aggiungi blocco</p>
+      <div class="row">
+        <label>Tipo</label>
+        <select id="block-type" onchange="toggleBlockOpts()">
+          <option value="interval">Intervalli (work + rest)</option>
+          <option value="recover">Recupero lungo</option>
+        </select>
+      </div>
+      <div id="interval-opts">
+        <div class="row"><label>Work (sec)</label><input type="number" id="b-work" value="20" min="1" max="999" /></div>
+        <div class="row"><label>Rest (sec)</label><input type="number" id="b-rest" value="10" min="0" max="999" /></div>
+        <div class="row">
+          <label>Ripetizioni</label>
+          <input type="number" id="b-reps" value="4" min="1" max="99" oninput="updateWorkNameFields()" />
+        </div>
+        <div style="margin-bottom:8px">
+          <span class="work-names-toggle" onclick="toggleWNBox()">▸ Nomi esercizi per ogni work (opzionale)</span>
+        </div>
+        <div id="wn-box" class="work-names-box" style="display:none"></div>
+      </div>
+      <div id="recover-opts" style="display:none">
+        <div class="row"><label>Durata (sec)</label><input type="number" id="b-recover" value="60" min="1" max="999" /></div>
+      </div>
+      <button class="btn primary" onclick="addBlock()">+ Aggiungi blocco</button>
+    </div>
+    <div class="card">
+      <p class="section-title">Sequenza</p>
+      <div id="block-list" class="block-list"></div>
+      <hr class="h-sep">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="saveWorkout()">💾 Salva</button>
+        <button class="btn primary" onclick="startTimer()">▶ Avvia timer</button>
+        <button class="btn danger" onclick="clearBlocks()">🗑 Svuota</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVED -->
+  <div id="tab-saved" class="section">
+    <div class="card">
+      <p class="section-title">Allenamenti salvati</p>
+      <div id="saved-list" class="saved-list"></div>
+    </div>
+  </div>
+
+  <!-- TIMER -->
+  <div id="tab-timer" class="section">
+    <div class="card timer-screen">
+      <div class="t-phase-row">
+        <span id="t-pill" class="t-phase-pill pill-done">—</span>
+        <span id="t-step" class="t-step"></span>
+      </div>
+      <div id="t-exname" class="t-exname">—</div>
+      <div id="t-time" class="t-time">--:--</div>
+      <div class="progress-wrap"><div id="t-bar" class="progress-fill" style="width:0%"></div></div>
+      <div id="t-totale" class="t-totale">Tempo totale rimanente: —</div>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" onclick="skipStep()" title="Salta">⏭</button>
+        <button class="ctrl-btn big" id="play-btn" onclick="togglePlay()">▶</button>
+        <button class="ctrl-btn" onclick="resetTimer()" title="Reset">↺</button>
+      </div>
+    </div>
+    <div class="card">
+      <p class="section-title">Sequenza</p>
+      <div id="seq-preview" class="sequence-preview"><p class="empty">Nessuna sequenza caricata</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var blocks=[];var steps=[];var currentStep=0;var timeLeft=0;var totalTime=0;
+var running=false;var rafId=null;var audioCtx=null;var wnVisible=false;
+var stepStartTs=null;var stepDurMs=0;
+
+function toggleBlockOpts(){
+  var t=document.getElementById('block-type').value;
+  document.getElementById('interval-opts').style.display=t==='interval'?'':'none';
+  document.getElementById('recover-opts').style.display=t==='recover'?'':'none';
+}
+function toggleWNBox(){
+  wnVisible=!wnVisible;
+  document.getElementById('wn-box').style.display=wnVisible?'':'none';
+  document.querySelector('.work-names-toggle').textContent=(wnVisible?'▾':'▸')+' Nomi esercizi per ogni work (opzionale)';
+  if(wnVisible)updateWorkNameFields();
+}
+function updateWorkNameFields(){
+  if(!wnVisible)return;
+  var reps=parseInt(document.getElementById('b-reps').value)||1;
+  var box=document.getElementById('wn-box');
+  var existing=box.querySelectorAll('input');
+  var vals=[];existing.forEach(function(el){vals.push(el.value);});
+  box.innerHTML='';
+  for(var i=0;i<reps;i++){
+    var div=document.createElement('div');div.className='wn-row';
+    var lbl=document.createElement('label');lbl.textContent='Work '+(i+1);
+    var inp=document.createElement('input');inp.type='text';
+    inp.placeholder='Esercizio '+(i+1)+' (es. Squat)';inp.value=vals[i]||'';
+    div.appendChild(lbl);div.appendChild(inp);box.appendChild(div);
+  }
+}
+function getWorkNames(){
+  if(!wnVisible)return[];
+  var inputs=document.getElementById('wn-box').querySelectorAll('input');
+  var out=[];inputs.forEach(function(el){out.push(el.value.trim());});return out;
+}
+
+/* Audio */
+function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function beep(freq,dur,vol,type){
+  try{var ctx=getAudioCtx();var o=ctx.createOscillator();var g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);o.frequency.value=freq;o.type=type||'sine';
+  g.gain.setValueAtTime(vol||0.4,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+  o.start(ctx.currentTime);o.stop(ctx.currentTime+dur);}catch(e){}
+}
+function bip(){beep(900,0.07,0.3,'square');}
+function playTransition(phaseType){
+  if(phaseType==='work'){beep(1047,0.35,0.5);}
+  else if(phaseType==='rest'){beep(659,0.35,0.4);}
+  else if(phaseType==='recover'){beep(523,0.45,0.35);}
+  else if(phaseType==='done'){[0,180,360,580].forEach(function(d,i){setTimeout(function(){beep([880,1047,1320,1760][i],0.25,0.5);},d);});}
+  setTimeout(function(){speakPhase(phaseType);},100);
+}
+function speakPhase(type){
+  if(!window.speechSynthesis)return;
+  var map={work:'work',rest:'rest',recover:'long rest',done:'done'};
+  var u=new SpeechSynthesisUtterance(map[type]||type);
+  u.lang='en-US';u.rate=0.95;u.volume=1;
+  window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
+}
+
+/* Tabs */
+function showTab(t){
+  ['config','saved','timer'].forEach(function(n,i){
+    document.querySelectorAll('.tab')[i].classList.toggle('active',n===t);
+    document.getElementById('tab-'+n).classList.toggle('active',n===t);
+  });
+  if(t==='saved')renderSaved();
+}
+
+/* Blocks */
+function addBlock(){
+  var type=document.getElementById('block-type').value;
+  if(type==='interval'){
+    var work=parseInt(document.getElementById('b-work').value)||20;
+    var rest=parseInt(document.getElementById('b-rest').value)||10;
+    var reps=parseInt(document.getElementById('b-reps').value)||4;
+    var names=getWorkNames();
+    blocks.push({type:'interval',work:work,rest:rest,reps:reps,names:names});
+  }else{
+    blocks.push({type:'recover',dur:parseInt(document.getElementById('b-recover').value)||60});
+  }
+  renderBlocks();
+}
+function renderBlocks(){
+  var el=document.getElementById('block-list');el.innerHTML='';
+  if(!blocks.length){el.innerHTML='<p class="empty">Nessun blocco aggiunto</p>';return;}
+  blocks.forEach(function(b,i){
+    var div=document.createElement('div');div.className='block-item';
+    if(b.type==='interval'){
+      var hasNames=b.names&&b.names.some(function(n){return n;});
+      var nameList='';
+      if(hasNames){
+        nameList='<div class="ex-names">';
+        for(var r=0;r<b.reps;r++){var n=(b.names&&b.names[r])?b.names[r]:'—';nameList+='<span style="margin-right:8px">W'+(r+1)+': '+n+'</span>';}
+        nameList+='</div>';
+      }
+      div.innerHTML='<div class="block-item-row"><span class="badge work-badge">work</span><span class="badge rest-badge">rest</span><span class="times">'+b.work+'s + '+b.rest+'s</span><span class="reps">× '+b.reps+'</span><button class="remove">×</button></div>'+nameList;
+    }else{
+      div.innerHTML='<div class="block-item-row"><span class="badge recover-badge">long rest</span><span class="times">'+b.dur+'s</span><button class="remove">×</button></div>';
+    }
+    div.querySelector('.remove').addEventListener('click',function(){removeBlock(i);});
+    el.appendChild(div);
+  });
+}
+function removeBlock(i){blocks.splice(i,1);renderBlocks();}
+function clearBlocks(){blocks=[];renderBlocks();}
+
+/* Steps */
+function buildSteps(bks){
+  var s=[];
+  bks.forEach(function(b){
+    if(b.type==='interval'){
+      for(var r=0;r<b.reps;r++){
+        var exname=(b.names&&b.names[r])?b.names[r]:'';
+        s.push({type:'work',dur:b.work,exname:exname,rep:r+1,total:b.reps});
+        if(b.rest>0)s.push({type:'rest',dur:b.rest,exname:'',rep:r+1,total:b.reps});
+      }
+    }else{s.push({type:'recover',dur:b.dur,exname:'',rep:0,total:0});}
+  });
+  return s;
+}
+
+/* Timer */
+function startTimer(){
+  if(!blocks.length){alert('Aggiungi almeno un blocco prima di avviare.');return;}
+  steps=buildSteps(blocks);currentStep=0;running=false;
+  cancelAnimationFrame(rafId);showTab('timer');loadStep(0,false);
+  renderSeqPreview();document.getElementById('play-btn').textContent='▶';togglePlay();
+}
+function loadStep(i,doTransition){
+  if(i>=steps.length){endWorkout();return;}
+  var s=steps[i];timeLeft=s.dur;totalTime=s.dur;stepDurMs=s.dur*1000;stepStartTs=null;
+  updateTimerUI(0);highlightSeq(i);
+  if(doTransition)playTransition(s.type);
+}
+function endWorkout(){
+  running=false;cancelAnimationFrame(rafId);
+  document.getElementById('t-pill').className='t-phase-pill pill-done';
+  document.getElementById('t-pill').textContent='Fine';
+  document.getElementById('t-step').textContent='';
+  document.getElementById('t-exname').textContent='Ottimo lavoro! 🎉';
+  document.getElementById('t-time').textContent='00:00';
+  document.getElementById('t-bar').style.width='100%';
+  document.getElementById('t-totale').textContent='Allenamento completato';
+  document.getElementById('play-btn').textContent='▶';
+  playTransition('done');highlightSeq(-1);
+}
+function updateTimerUI(fraction){
+  var s=steps[currentStep];
+  var pill=document.getElementById('t-pill');
+  var pillCls={work:'pill-work',rest:'pill-rest',recover:'pill-recover'}[s.type]||'pill-done';
+  pill.className='t-phase-pill '+pillCls;
+  pill.textContent=s.type==='work'?'WORK':s.type==='rest'?'REST':'LONG REST';
+  var stepEl=document.getElementById('t-step');
+  stepEl.textContent=s.total>0?s.rep+' / '+s.total:'';
+  document.getElementById('t-exname').textContent=s.exname||(s.type==='rest'?'Rest':s.type==='recover'?'Long rest':'');
+  var secs=Math.ceil(timeLeft);var m=Math.floor(secs/60),sc=secs%60;
+  document.getElementById('t-time').textContent=String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');
+  document.getElementById('t-bar').style.width=(fraction*100).toFixed(2)+'%';
+  var totSec=Math.ceil(timeLeft);
+  for(var i=currentStep+1;i<steps.length;i++)totSec+=steps[i].dur;
+  var tm=Math.floor(totSec/60),ts=totSec%60;
+  document.getElementById('t-totale').textContent='Tempo totale rimanente: '+String(tm).padStart(2,'0')+':'+String(ts).padStart(2,'0');
+}
+raf._lastBip=-1;
+function raf(ts){
+  if(!running)return;
+  if(stepStartTs===null)stepStartTs=ts;
+  var elapsed=ts-stepStartTs;var remaining=stepDurMs-elapsed;timeLeft=remaining/1000;
+  var fraction=Math.min(elapsed/stepDurMs,1.0);
+  updateTimerUI(fraction);
+  var secsLeft=Math.ceil(timeLeft);
+  if(secsLeft<=3&&secsLeft>=1&&secsLeft!==raf._lastBip){
+    bip();var td=document.getElementById('t-time');td.classList.add('pulse');
+    setTimeout(function(){td.classList.remove('pulse');},150);raf._lastBip=secsLeft;
+  }
+  if(remaining<=0){
+    raf._lastBip=-1;currentStep++;
+    if(currentStep>=steps.length){endWorkout();return;}
+    loadStep(currentStep,true);if(running)rafId=requestAnimationFrame(raf);return;
+  }
+  rafId=requestAnimationFrame(raf);
+}
+function togglePlay(){
+  if(!steps.length)return;running=!running;
+  document.getElementById('play-btn').textContent=running?'⏸':'▶';
+  if(running){
+    if(stepStartTs===null){playTransition(steps[currentStep].type);}
+    else{stepStartTs=performance.now()-((stepDurMs-timeLeft*1000));}
+    raf._lastBip=-1;rafId=requestAnimationFrame(raf);
+  }else{cancelAnimationFrame(rafId);}
+}
+function skipStep(){
+  if(!steps.length)return;cancelAnimationFrame(rafId);raf._lastBip=-1;currentStep++;
+  if(currentStep>=steps.length){endWorkout();return;}
+  loadStep(currentStep,true);if(running)rafId=requestAnimationFrame(raf);
+}
+function resetTimer(){
+  running=false;cancelAnimationFrame(rafId);raf._lastBip=-1;
+  document.getElementById('play-btn').textContent='▶';
+  if(steps.length){currentStep=0;loadStep(0,false);renderSeqPreview();}
+}
+
+/* Sequence preview */
+function renderSeqPreview(){
+  var el=document.getElementById('seq-preview');
+  if(!steps.length){el.innerHTML='<p class="empty">Nessuna sequenza caricata</p>';return;}
+  el.innerHTML=steps.map(function(s,i){
+    var lbl=s.type==='work'?'Work'+(s.exname?' — '+s.exname:''):s.type==='rest'?'Rest':'Long rest';
+    var stepLbl=s.total>0?' <span style="color:#aaa">'+s.rep+'/'+s.total+'</span>':'';
+    return '<div class="seq-row" id="seq-'+i+'"><span class="seq-dot dot-'+s.type+'"></span><span style="flex:1">'+lbl+stepLbl+'</span><span style="color:#aaa;font-size:11px">'+s.dur+'s</span></div>';
+  }).join('');
+}
+function highlightSeq(i){
+  document.querySelectorAll('.seq-row').forEach(function(el){el.classList.remove('active-step');});
+  if(i>=0){var el=document.getElementById('seq-'+i);if(el){el.classList.add('active-step');el.scrollIntoView({block:'nearest',behavior:'smooth'});}}
+}
+
+/* Save / Load */
+function saveWorkout(){
+  if(!blocks.length){alert('Nessun blocco da salvare.');return;}
+  var name=document.getElementById('workout-name').value.trim()||'Allenamento '+new Date().toLocaleDateString('it-IT');
+  var saved=getSaved();saved['w_'+Date.now()]={name:name,blocks:JSON.parse(JSON.stringify(blocks)),createdAt:Date.now()};
+  localStorage.setItem('workouts_v1',JSON.stringify(saved));alert('Salvato: "'+name+'"');
+}
+function getSaved(){try{return JSON.parse(localStorage.getItem('workouts_v1'))||{};}catch(e){return{};}}
+function renderSaved(){
+  var saved=getSaved(),el=document.getElementById('saved-list');
+  var keys=Object.keys(saved).sort(function(a,b){return saved[b].createdAt-saved[a].createdAt;});
+  if(!keys.length){el.innerHTML='<p class="empty">Nessun allenamento salvato</p>';return;}
+  el.innerHTML=keys.map(function(k){
+    var w=saved[k];var tot=buildSteps(w.blocks).reduce(function(a,s){return a+s.dur;},0);
+    var m=Math.floor(tot/60),s=tot%60;
+    return '<div class="saved-item" data-id="'+k+'"><div style="flex:1"><div class="sname">'+w.name+'</div><div class="sinfo">'+w.blocks.length+' blocchi · '+(m?m+'min ':'')+(s?s+'s':'')+'</div></div><button class="btn danger sm del-btn" data-id="'+k+'">🗑</button></div>';
+  }).join('');
+  el.querySelectorAll('.saved-item').forEach(function(item){
+    item.addEventListener('click',function(e){if(e.target.closest('.del-btn'))return;loadWorkout(item.dataset.id);});
+  });
+  el.querySelectorAll('.del-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();deleteWorkout(btn.dataset.id);});
+  });
+}
+function loadWorkout(id){
+  var w=getSaved()[id];if(!w)return;
+  blocks=JSON.parse(JSON.stringify(w.blocks));
+  document.getElementById('workout-name').value=w.name;
+  renderBlocks();showTab('config');
+}
+function deleteWorkout(id){
+  var s=getSaved();delete s[id];localStorage.setItem('workouts_v1',JSON.stringify(s));renderSaved();
+}
+
+renderBlocks();
+</script>
+</body>
+</html>

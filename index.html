@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Workout Timer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f3;color:#1a1a1a;padding:1.5rem 1rem;min-height:100vh}
+.app{max-width:680px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
+.tabs{display:flex;border:1px solid #ddd;border-radius:10px;overflow:hidden;margin-bottom:1.5rem}
+.tab{flex:1;padding:10px;font-size:14px;font-weight:500;border:none;background:transparent;cursor:pointer;color:#666;transition:all .15s}
+.tab.active{background:#ececea;color:#1a1a1a}
+.tab:not(:last-child){border-right:1px solid #ddd}
+.section{display:none}.section.active{display:block}
+.card{background:#fff;border:1px solid #e0e0de;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.row label{font-size:13px;color:#666;min-width:100px;flex-shrink:0}
+.row input[type=number]{width:70px;padding:6px 8px;border:1px solid #ccc;border-radius:7px;font-size:14px;background:#fff;color:#1a1a1a}
+.row input[type=text]{flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:7px;font-size:14px;background:#fff;color:#1a1a1a}
+.row select{padding:6px 8px;border:1px solid #ccc;border-radius:7px;font-size:14px;background:#fff;color:#1a1a1a;flex:1}
+.row .hint{font-size:11px;color:#aaa;white-space:nowrap}
+.btn{padding:8px 16px;border:1px solid #ccc;border-radius:8px;font-size:13px;cursor:pointer;background:transparent;color:#1a1a1a;display:inline-flex;align-items:center;gap:6px;transition:background .15s}
+.btn:hover{background:#f0f0ee}
+.btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn.primary:hover{opacity:.85}
+.btn.danger{color:#c0392b;border-color:#e0b0ae}
+.btn.danger:hover{background:#fdf0ee}
+.btn.sm{padding:4px 10px;font-size:12px}
+.btn.done-btn{padding:14px 32px;font-size:18px;font-weight:600;border-radius:10px;background:#1a1a1a;color:#fff;border:none;width:100%;justify-content:center;margin-bottom:.75rem;cursor:pointer}
+.btn.done-btn:hover{opacity:.85}
+.ex-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.ex-row{display:flex;align-items:center;gap:8px}
+.ex-row input[type=text]{flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:7px;font-size:13px;background:#fff;color:#1a1a1a}
+.ex-row input[type=number]{width:64px;padding:5px 8px;border:1px solid #ccc;border-radius:7px;font-size:13px;background:#fff;color:#1a1a1a}
+.ex-row .ex-lbl{font-size:12px;color:#888;white-space:nowrap}
+.ex-row .rm-ex{border:none;background:none;color:#aaa;font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
+.ex-row .rm-ex:hover{color:#c0392b}
+.ex-header{display:flex;gap:8px;align-items:center;font-size:12px;color:#aaa;margin-bottom:4px;padding-left:2px}
+.work-names-box{margin-top:6px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}
+.wn-row{display:flex;align-items:center;gap:8px}
+.wn-row label{font-size:12px;color:#666;min-width:68px;white-space:nowrap}
+.wn-row input{flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:7px;font-size:13px;background:#fff;color:#1a1a1a}
+.work-names-toggle{font-size:12px;color:#888;cursor:pointer;text-decoration:underline;margin-bottom:8px;display:inline-block}
+.block-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;min-height:20px}
+.block-item{background:#f5f5f3;border-radius:8px;padding:10px 12px;font-size:13px}
+.block-item-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.work-badge{background:#EAF3DE;color:#27500A}
+.rest-badge{background:#E6F1FB;color:#0C447C}
+.recover-badge{background:#FAEEDA;color:#633806}
+.reps-badge{background:#F0E6FB;color:#4A1080}
+.block-item .times{font-weight:500}
+.block-item .reps-info{color:#888}
+.block-item .remove{margin-left:auto;cursor:pointer;color:#aaa;font-size:20px;line-height:1;border:none;background:none;padding:0 4px;flex-shrink:0}
+.block-item .remove:hover{color:#c0392b}
+.block-item .ex-names{font-size:11px;color:#aaa;margin-top:4px;padding-left:2px}
+.saved-list{display:flex;flex-direction:column;gap:8px}
+.saved-item{background:#f5f5f3;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;transition:background .15s}
+.saved-item:hover{background:#ececea}
+.sname{font-weight:500;flex:1}.sinfo{color:#888;font-size:12px}
+.empty{color:#aaa;font-size:13px;padding:.5rem 0;text-align:center}
+/* TIMER */
+.timer-screen{padding:1.25rem 1rem 1rem;text-align:center}
+.t-phase-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:.5rem}
+.t-phase-pill{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.pill-work{background:#EAF3DE;color:#27500A}
+.pill-rest{background:#E6F1FB;color:#185FA5}
+.pill-recover{background:#FAEEDA;color:#854F0B}
+.pill-reps{background:#F0E6FB;color:#4A1080}
+.pill-countdown{background:#ececea;color:#666}
+.pill-done{background:#ececea;color:#888}
+.t-step{font-size:12px;color:#aaa}
+.t-exname{font-size:36px;font-weight:700;color:#1a1a1a;min-height:44px;margin:.3rem 0 .5rem;letter-spacing:-.02em;line-height:1.1}
+.t-reps-block{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:.2rem 0 .5rem}
+.t-reps-display{font-size:32px;font-weight:600;color:#1a1a1a;font-variant-numeric:tabular-nums;line-height:1}
+.t-reps-unit{font-size:16px;color:#888;font-weight:400}
+.t-next-hint{font-size:12px;color:#aaa;margin-bottom:.6rem;min-height:16px}
+.t-time{font-size:80px;font-weight:400;line-height:1;font-variant-numeric:tabular-nums;color:#1a1a1a;margin-bottom:.75rem}
+.t-time.pulse{animation:blink .12s ease-out}
+@keyframes blink{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+.progress-wrap{background:#ececea;border-radius:20px;height:7px;overflow:hidden;margin-bottom:.5rem}
+.progress-fill{height:100%;border-radius:20px;background:#1a1a1a}
+.t-totale{font-size:12px;color:#aaa;margin-bottom:1.1rem}
+.ctrl-row{display:flex;gap:10px;justify-content:center;margin-bottom:.25rem}
+.ctrl-btn{width:52px;height:52px;border-radius:50%;border:1px solid #ddd;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#1a1a1a;transition:background .15s}
+.ctrl-btn:hover{background:#f0f0ee}
+.ctrl-btn.big{width:68px;height:68px;font-size:26px;background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.ctrl-btn.big:hover{opacity:.85}
+.wakelock-badge{font-size:11px;color:#aaa;margin-top:.5rem;min-height:16px}
+.sequence-preview{display:flex;flex-direction:column;gap:3px;max-height:190px;overflow-y:auto}
+.seq-row{display:flex;gap:6px;align-items:center;padding:5px 8px;border-radius:7px;font-size:12px}
+.seq-row.active-step{background:#ececea;border:1px solid #ddd}
+.seq-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-work{background:#639922}.dot-rest{background:#378ADD}.dot-recover{background:#BA7517}.dot-reps{background:#9B3DD8}.dot-countdown{background:#888}
+.name-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.name-row input{flex:1;padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a}
+.section-title{font-size:15px;font-weight:500;margin-bottom:.75rem}
+.h-sep{border:none;border-top:1px solid #eee;margin:1rem 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>⏱ Workout Timer</h1>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('config')">⚙ Configura</button>
+    <button class="tab" onclick="showTab('saved')">📁 Salvati</button>
+    <button class="tab" onclick="showTab('timer')">▶ Timer</button>
+  </div>
+
+  <div id="tab-config" class="section active">
+    <div class="card">
+      <div class="name-row">
+        <input id="workout-name" type="text" placeholder="Nome allenamento (es. HIIT mattina)" />
+      </div>
+      <p class="section-title">Aggiungi blocco</p>
+      <div class="row">
+        <label>Tipo</label>
+        <select id="block-type" onchange="toggleBlockOpts()">
+          <option value="interval">Intervalli a tempo (work + rest)</option>
+          <option value="circuit">Circuito / Ripetizioni</option>
+          <option value="recover">Recupero lungo</option>
+        </select>
+      </div>
+      <div id="interval-opts">
+        <div class="row"><label>Work (sec)</label><input type="number" id="b-work" value="20" min="1" max="999"/></div>
+        <div class="row"><label>Rest (sec)</label><input type="number" id="b-rest" value="10" min="0" max="999"/></div>
+        <div class="row"><label>Ripetizioni</label><input type="number" id="b-reps" value="4" min="1" max="99" oninput="updateWorkNameFields()"/></div>
+        <div style="margin-bottom:8px"><span class="work-names-toggle" onclick="toggleWNBox()">▸ Nomi esercizi per ogni work (opzionale)</span></div>
+        <div id="wn-box" class="work-names-box" style="display:none"></div>
+      </div>
+      <div id="circuit-opts" style="display:none">
+        <div class="row"><label>Giri</label><input type="number" id="b-c-sets" value="3" min="1" max="99" oninput="updateEstDur()"/></div>
+        <div class="row"><label>Recupero giro (sec)</label><input type="number" id="b-c-rest" value="60" min="0" max="999"/></div>
+        <hr style="border:none;border-top:1px solid #eee;margin:.5rem 0"/>
+        <p style="font-size:13px;font-weight:500;margin-bottom:8px">Esercizi nel circuito</p>
+        <div class="ex-header">
+          <span style="flex:1">Nome esercizio</span>
+          <span style="width:64px;text-align:center">Reps</span>
+          <span style="width:24px"></span>
+        </div>
+        <div id="c-ex-list" class="ex-list"></div>
+        <button class="btn sm" onclick="addExercise()" style="margin-bottom:10px">+ Esercizio</button>
+        <hr style="border:none;border-top:1px solid #eee;margin:.5rem 0 .75rem"/>
+        <div class="row">
+          <label>Tempo stim./giro (sec)</label>
+          <input type="number" id="b-c-duration" value="90" min="0" max="9999"/>
+          <span class="hint">solo per stima</span>
+        </div>
+        <p style="font-size:11px;color:#aaa;margin-bottom:10px">Default: 30s × numero esercizi. Modifica liberamente.</p>
+      </div>
+      <div id="recover-opts" style="display:none">
+        <div class="row"><label>Durata (sec)</label><input type="number" id="b-recover" value="60" min="1" max="999"/></div>
+      </div>
+      <button class="btn primary" onclick="addBlock()">+ Aggiungi blocco</button>
+    </div>
+    <div class="card">
+      <p class="section-title">Sequenza</p>
+      <div id="block-list" class="block-list"></div>
+      <hr class="h-sep">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="saveWorkout()">💾 Salva</button>
+        <button class="btn primary" onclick="startTimer()">▶ Avvia timer</button>
+        <button class="btn danger" onclick="clearBlocks()">🗑 Svuota</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-saved" class="section">
+    <div class="card">
+      <p class="section-title">Allenamenti salvati</p>
+      <div id="saved-list" class="saved-list"></div>
+    </div>
+  </div>
+
+  <div id="tab-timer" class="section">
+    <div class="card timer-screen">
+      <div class="t-phase-row">
+        <span id="t-pill" class="t-phase-pill pill-countdown">—</span>
+        <span id="t-step" class="t-step"></span>
+      </div>
+      <div id="t-exname" class="t-exname">—</div>
+      <div id="timed-view">
+        <div id="t-time" class="t-time">--:--</div>
+      </div>
+      <div id="reps-view" style="display:none">
+        <div class="t-reps-block">
+          <span id="t-reps-num" class="t-reps-display">—</span>
+          <span class="t-reps-unit">reps</span>
+        </div>
+        <div id="t-next-hint" class="t-next-hint"></div>
+        <button class="btn done-btn" onclick="completeReps()">✓ Completato</button>
+      </div>
+      <div class="progress-wrap"><div id="t-bar" class="progress-fill" style="width:0%"></div></div>
+      <div id="t-totale" class="t-totale">Tempo totale rimanente: —</div>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" onclick="skipStep()" title="Salta">⏭</button>
+        <button class="ctrl-btn big" id="play-btn" onclick="togglePlay()">▶</button>
+        <button class="ctrl-btn" onclick="resetTimer()" title="Reset">↺</button>
+      </div>
+      <div id="wakelock-badge" class="wakelock-badge"></div>
+    </div>
+    <div class="card">
+      <p class="section-title">Sequenza</p>
+      <div id="seq-preview" class="sequence-preview"><p class="empty">Nessuna sequenza caricata</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var blocks=[],steps=[],currentStep=0;
+var timeLeft=0,totalTime=0,running=false,rafId=null;
+var audioCtx=null,wnVisible=false;
+var stepStartTs=null,stepDurMs=0;
+var wakeLock=null,inRepsPhase=false;
+var repsStepStartTs=null;
+
+function toggleBlockOpts(){
+  var t=document.getElementById('block-type').value;
+  document.getElementById('interval-opts').style.display=t==='interval'?'':'none';
+  document.getElementById('circuit-opts').style.display=t==='circuit'?'':'none';
+  document.getElementById('recover-opts').style.display=t==='recover'?'':'none';
+  if(t==='circuit'&&document.getElementById('c-ex-list').children.length===0)addExercise();
+}
+function toggleWNBox(){
+  wnVisible=!wnVisible;
+  document.getElementById('wn-box').style.display=wnVisible?'':'none';
+  document.querySelector('.work-names-toggle').textContent=(wnVisible?'▾':'▸')+' Nomi esercizi per ogni work (opzionale)';
+  if(wnVisible)updateWorkNameFields();
+}
+function updateWorkNameFields(){
+  if(!wnVisible)return;
+  var reps=parseInt(document.getElementById('b-reps').value)||1;
+  var box=document.getElementById('wn-box');
+  var existing=box.querySelectorAll('input');var vals=[];existing.forEach(function(el){vals.push(el.value);});
+  box.innerHTML='';
+  for(var i=0;i<reps;i++){
+    var div=document.createElement('div');div.className='wn-row';
+    var lbl=document.createElement('label');lbl.textContent='Work '+(i+1);
+    var inp=document.createElement('input');inp.type='text';inp.placeholder='Esercizio '+(i+1);inp.value=vals[i]||'';
+    div.appendChild(lbl);div.appendChild(inp);box.appendChild(div);
+  }
+}
+function getWorkNames(){
+  if(!wnVisible)return[];
+  var inputs=document.getElementById('wn-box').querySelectorAll('input');
+  var out=[];inputs.forEach(function(el){out.push(el.value.trim());});return out;
+}
+function addExercise(){
+  var list=document.getElementById('c-ex-list');
+  var row=document.createElement('div');row.className='ex-row';
+  row.innerHTML='<input type="text" placeholder="Nome esercizio"/><input type="number" value="10" min="1" max="999"/><span class="ex-lbl">reps</span><button class="rm-ex" onclick="removeExercise(this)">×</button>';
+  list.appendChild(row);
+  row.querySelectorAll('input').forEach(function(inp){inp.addEventListener('input',updateEstDur);});
+  updateEstDur();
+}
+function removeExercise(btn){btn.parentElement.remove();updateEstDur();}
+function updateEstDur(){
+  var count=document.getElementById('c-ex-list').children.length;
+  document.getElementById('b-c-duration').value=count*30;
+}
+function getExercises(){
+  var rows=document.getElementById('c-ex-list').querySelectorAll('.ex-row');
+  var out=[];
+  rows.forEach(function(row){
+    var inputs=row.querySelectorAll('input');
+    out.push({name:inputs[0].value.trim(),reps:parseInt(inputs[1].value)||10});
+  });
+  return out;
+}
+function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function beep(freq,dur,vol,type){
+  try{var ctx=getAudioCtx();var o=ctx.createOscillator();var g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);o.frequency.value=freq;o.type=type||'sine';
+  g.gain.setValueAtTime(vol||0.4,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+  o.start(ctx.currentTime);o.stop(ctx.currentTime+dur);}catch(e){}
+}
+function bip(){beep(900,0.07,0.3,'square');}
+function playTransition(t){
+  if(t==='work'){beep(1047,0.35,0.5);}
+  else if(t==='rest'){beep(659,0.35,0.4);}
+  else if(t==='recover'){beep(523,0.45,0.35);}
+  else if(t==='reps'){beep(880,0.15,0.4);setTimeout(function(){beep(1047,0.2,0.45);},150);}
+  else if(t==='countdown'){beep(660,0.15,0.3);}
+  else if(t==='done'){[0,180,360,580].forEach(function(d,i){setTimeout(function(){beep([880,1047,1320,1760][i],0.25,0.5);},d);});}
+  setTimeout(function(){speakPhase(t);},100);
+}
+function speakPhase(t){
+  if(!window.speechSynthesis)return;
+  var map={work:'work',rest:'rest',recover:'long rest',reps:'go',done:'done',countdown:'get ready'};
+  var u=new SpeechSynthesisUtterance(map[t]||t);
+  u.lang='en-US';u.rate=0.95;u.volume=1;
+  window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
+}
+async function acquireWakeLock(){
+  if(!('wakeLock' in navigator))return;
+  try{wakeLock=await navigator.wakeLock.request('screen');
+    document.getElementById('wakelock-badge').textContent='🔆 Schermo attivo';
+    wakeLock.addEventListener('release',function(){document.getElementById('wakelock-badge').textContent='';});
+  }catch(e){}
+}
+function releaseWakeLock(){if(wakeLock){wakeLock.release();wakeLock=null;}document.getElementById('wakelock-badge').textContent='';}
+function showTab(t){
+  ['config','saved','timer'].forEach(function(n,i){
+    document.querySelectorAll('.tab')[i].classList.toggle('active',n===t);
+    document.getElementById('tab-'+n).classList.toggle('active',n===t);
+  });
+  if(t==='saved')renderSaved();
+}
+function addBlock(){
+  var type=document.getElementById('block-type').value;
+  if(type==='interval'){
+    blocks.push({type:'interval',
+      work:parseInt(document.getElementById('b-work').value)||20,
+      rest:parseInt(document.getElementById('b-rest').value)||10,
+      reps:parseInt(document.getElementById('b-reps').value)||4,
+      names:getWorkNames()});
+  }else if(type==='circuit'){
+    var exercises=getExercises();
+    if(!exercises.length){alert('Aggiungi almeno un esercizio al circuito.');return;}
+    blocks.push({type:'circuit',exercises:exercises,
+      sets:parseInt(document.getElementById('b-c-sets').value)||3,
+      rest:parseInt(document.getElementById('b-c-rest').value)||60,
+      duration:parseInt(document.getElementById('b-c-duration').value)||90});
+  }else{
+    blocks.push({type:'recover',dur:parseInt(document.getElementById('b-recover').value)||60});
+  }
+  renderBlocks();
+}
+function renderBlocks(){
+  var el=document.getElementById('block-list');el.innerHTML='';
+  if(!blocks.length){el.innerHTML='<p class="empty">Nessun blocco aggiunto</p>';return;}
+  blocks.forEach(function(b,i){
+    var div=document.createElement('div');div.className='block-item';
+    if(b.type==='interval'){
+      var hasNames=b.names&&b.names.some(function(n){return n;});
+      var nameList='';
+      if(hasNames){nameList='<div class="ex-names">';for(var r=0;r<b.reps;r++){var n=(b.names&&b.names[r])?b.names[r]:'—';nameList+='<span style="margin-right:8px">W'+(r+1)+': '+n+'</span>';}nameList+='</div>';}
+      div.innerHTML='<div class="block-item-row"><span class="badge work-badge">work</span><span class="badge rest-badge">rest</span><span class="times">'+b.work+'s + '+b.rest+'s</span><span class="reps-info">× '+b.reps+'</span><button class="remove">×</button></div>'+nameList;
+    }else if(b.type==='circuit'){
+      var exStr=b.exercises.map(function(e){return (e.name||'Esercizio')+' ×'+e.reps;}).join(' · ');
+      div.innerHTML='<div class="block-item-row"><span class="badge reps-badge">circuito</span>'+
+        '<span class="times">'+b.sets+' giri</span>'+
+        '<span class="reps-info" style="font-size:11px">rec '+b.rest+'s · ~'+b.duration+'s/giro</span>'+
+        '<button class="remove">×</button></div>'+
+        '<div class="ex-names">'+exStr+'</div>';
+    }else{
+      div.innerHTML='<div class="block-item-row"><span class="badge recover-badge">long rest</span><span class="times">'+b.dur+'s</span><button class="remove">×</button></div>';
+    }
+    div.querySelector('.remove').addEventListener('click',function(){removeBlock(i);});
+    el.appendChild(div);
+  });
+}
+function removeBlock(i){blocks.splice(i,1);renderBlocks();}
+function clearBlocks(){blocks=[];renderBlocks();}
+function buildSteps(bks){
+  var s=[];
+  s.push({type:'countdown',dur:10,estDur:10,exname:'Preparati',repsCount:0,rep:0,total:0,exIdx:0,exTotal:0,timed:true,nextHint:''});
+  bks.forEach(function(b){
+    if(b.type==='interval'){
+      for(var r=0;r<b.reps;r++){
+        var exname=(b.names&&b.names[r])?b.names[r]:'';
+        s.push({type:'work',dur:b.work,estDur:b.work,exname:exname,repsCount:0,rep:r+1,total:b.reps,exIdx:0,exTotal:0,timed:true,nextHint:''});
+        if(b.rest>0)s.push({type:'rest',dur:b.rest,estDur:b.rest,exname:'',repsCount:0,rep:r+1,total:b.reps,exIdx:0,exTotal:0,timed:true,nextHint:''});
+      }
+    }else if(b.type==='circuit'){
+      var nEx=b.exercises.length;
+      var singleEst=nEx>0?Math.round(b.duration/nEx):30;
+      for(var gi=0;gi<b.sets;gi++){
+        for(var ei=0;ei<nEx;ei++){
+          var ex=b.exercises[ei];
+          var nextEx=b.exercises[ei+1];
+          var nextHint=nextEx?'Prossimo: '+(nextEx.name||'Esercizio')+' ×'+nextEx.reps:'';
+          s.push({type:'reps',dur:0,estDur:singleEst,exname:(ex.name||'Esercizio'),repsCount:ex.reps,
+            rep:gi+1,total:b.sets,exIdx:ei+1,exTotal:nEx,timed:false,nextHint:nextHint});
+        }
+        if(b.rest>0&&gi<b.sets-1)
+          s.push({type:'recover',dur:b.rest,estDur:b.rest,exname:'Recupero giro '+(gi+1)+'/'+b.sets,
+            repsCount:0,rep:gi+1,total:b.sets,exIdx:0,exTotal:0,timed:true,nextHint:''});
+      }
+    }else{
+      s.push({type:'recover',dur:b.dur,estDur:b.dur,exname:'',repsCount:0,rep:0,total:0,exIdx:0,exTotal:0,timed:true,nextHint:''});
+    }
+  });
+  return s;
+}
+function fmtTime(sec){sec=Math.max(0,Math.round(sec));var m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
+function calcTotalRemaining(){
+  var s=steps[currentStep];
+  var current=s.timed?Math.max(0,timeLeft):(repsStepStartTs!==null?Math.max(0,(s.estDur||0)-(performance.now()-repsStepStartTs)/1000):(s.estDur||0));
+  var future=0;for(var i=currentStep+1;i<steps.length;i++)future+=(steps[i].estDur||0);
+  return current+future;
+}
+function startTimer(){
+  if(!blocks.length){alert('Aggiungi almeno un blocco prima di avviare.');return;}
+  steps=buildSteps(blocks);currentStep=0;running=false;
+  cancelAnimationFrame(rafId);inRepsPhase=false;repsStepStartTs=null;
+  showTab('timer');loadStep(0,false);renderSeqPreview();
+  document.getElementById('play-btn').textContent='▶';
+  togglePlay();
+}
+function loadStep(i,doTransition){
+  if(i>=steps.length){endWorkout();return;}
+  var s=steps[i];inRepsPhase=!s.timed;
+  if(s.timed){timeLeft=s.dur;totalTime=s.dur;stepDurMs=s.dur*1000;stepStartTs=null;}
+  else{repsStepStartTs=null;}
+  updateTimerUI(0);highlightSeq(i);
+  if(doTransition)playTransition(s.type);
+}
+function endWorkout(){
+  running=false;cancelAnimationFrame(rafId);releaseWakeLock();
+  document.getElementById('t-pill').className='t-phase-pill pill-done';
+  document.getElementById('t-pill').textContent='Fine';
+  document.getElementById('t-step').textContent='';
+  document.getElementById('t-exname').textContent='Ottimo lavoro! 🎉';
+  document.getElementById('timed-view').style.display='';
+  document.getElementById('reps-view').style.display='none';
+  document.getElementById('t-time').textContent='00:00';
+  document.getElementById('t-bar').style.width='100%';
+  document.getElementById('t-totale').textContent='Allenamento completato';
+  document.getElementById('play-btn').textContent='▶';
+  playTransition('done');highlightSeq(-1);
+}
+function updateTimerUI(fraction){
+  var s=steps[currentStep];
+  var pillMap={work:'pill-work',rest:'pill-rest',recover:'pill-recover',reps:'pill-reps',countdown:'pill-countdown'};
+  var pill=document.getElementById('t-pill');
+  pill.className='t-phase-pill '+(pillMap[s.type]||'pill-done');
+  var pillLbl={work:'WORK',rest:'REST',recover:'RECUPERO',reps:'REPS',countdown:'PARTENZA'};
+  pill.textContent=pillLbl[s.type]||s.type.toUpperCase();
+  var stepTxt='';
+  if(s.exTotal>1)stepTxt='esercizio '+s.exIdx+'/'+s.exTotal+' · giro '+s.rep+'/'+s.total;
+  else if(s.total>0)stepTxt=s.rep+' / '+s.total;
+  document.getElementById('t-step').textContent=stepTxt;
+  document.getElementById('t-exname').textContent=s.exname||'';
+  if(s.timed){
+    document.getElementById('timed-view').style.display='';
+    document.getElementById('reps-view').style.display='none';
+    var secs=Math.ceil(timeLeft);var m=Math.floor(secs/60),sc=secs%60;
+    document.getElementById('t-time').textContent=String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');
+    document.getElementById('t-bar').style.width=(fraction*100).toFixed(2)+'%';
+  }else{
+    document.getElementById('timed-view').style.display='none';
+    document.getElementById('reps-view').style.display='';
+    document.getElementById('t-reps-num').textContent=s.repsCount;
+    document.getElementById('t-next-hint').textContent=s.nextHint||'';
+    if(s.estDur>0&&repsStepStartTs!==null){
+      var elap=(performance.now()-repsStepStartTs)/1000;
+      document.getElementById('t-bar').style.width=Math.min(elap/s.estDur*100,100).toFixed(2)+'%';
+    }else{document.getElementById('t-bar').style.width='0%';}
+  }
+  document.getElementById('t-totale').textContent='Tempo totale rimanente: ~'+fmtTime(calcTotalRemaining());
+}
+function completeReps(){
+  cancelAnimationFrame(rafId);beep(880,0.12,0.4);
+  currentStep++;if(currentStep>=steps.length){endWorkout();return;}
+  loadStep(currentStep,true);
+  if(running){if(!inRepsPhase){rafLoop._lastBip=-1;rafId=requestAnimationFrame(rafLoop);}else{repsStepStartTs=performance.now();rafId=requestAnimationFrame(repsRaf);}}
+}
+rafLoop._lastBip=-1;
+function rafLoop(ts){
+  if(!running||inRepsPhase)return;
+  if(stepStartTs===null)stepStartTs=ts;
+  var elapsed=ts-stepStartTs;var remaining=stepDurMs-elapsed;timeLeft=remaining/1000;
+  var fraction=Math.min(elapsed/stepDurMs,1.0);
+  updateTimerUI(fraction);
+  var secsLeft=Math.ceil(timeLeft);
+  if(secsLeft<=3&&secsLeft>=1&&secsLeft!==rafLoop._lastBip){
+    bip();var td=document.getElementById('t-time');td.classList.add('pulse');
+    setTimeout(function(){td.classList.remove('pulse');},150);rafLoop._lastBip=secsLeft;
+  }
+  if(remaining<=0){
+    rafLoop._lastBip=-1;currentStep++;
+    if(currentStep>=steps.length){endWorkout();return;}
+    loadStep(currentStep,true);
+    if(running){if(!inRepsPhase)rafId=requestAnimationFrame(rafLoop);else{repsStepStartTs=performance.now();rafId=requestAnimationFrame(repsRaf);}}
+    return;
+  }
+  rafId=requestAnimationFrame(rafLoop);
+}
+function repsRaf(){
+  if(!running||!inRepsPhase)return;
+  updateTimerUI(0);rafId=requestAnimationFrame(repsRaf);
+}
+function togglePlay(){
+  if(!steps.length)return;running=!running;
+  document.getElementById('play-btn').textContent=running?'⏸':'▶';
+  if(running){
+    acquireWakeLock();
+    if(!inRepsPhase){
+      if(stepStartTs===null)playTransition(steps[currentStep].type);
+      else stepStartTs=performance.now()-((stepDurMs-timeLeft*1000));
+      rafLoop._lastBip=-1;rafId=requestAnimationFrame(rafLoop);
+    }else{
+      if(repsStepStartTs===null){playTransition(steps[currentStep].type);repsStepStartTs=performance.now();}
+      rafId=requestAnimationFrame(repsRaf);
+    }
+  }else{cancelAnimationFrame(rafId);releaseWakeLock();}
+}
+function skipStep(){
+  if(!steps.length)return;cancelAnimationFrame(rafId);rafLoop._lastBip=-1;
+  currentStep++;if(currentStep>=steps.length){endWorkout();return;}
+  loadStep(currentStep,true);
+  if(running){if(!inRepsPhase)rafId=requestAnimationFrame(rafLoop);else{repsStepStartTs=performance.now();rafId=requestAnimationFrame(repsRaf);}}
+}
+function resetTimer(){
+  running=false;cancelAnimationFrame(rafId);rafLoop._lastBip=-1;
+  releaseWakeLock();inRepsPhase=false;repsStepStartTs=null;
+  document.getElementById('play-btn').textContent='▶';
+  if(steps.length){currentStep=0;loadStep(0,false);renderSeqPreview();}
+}
+function renderSeqPreview(){
+  var el=document.getElementById('seq-preview');
+  if(!steps.length){el.innerHTML='<p class="empty">Nessuna sequenza caricata</p>';return;}
+  el.innerHTML=steps.map(function(s,i){
+    var lbl={work:'Work',rest:'Rest',recover:'Recupero',reps:'Reps',countdown:'Preparati'}[s.type]||s.type;
+    if(s.exname)lbl+=' — '+s.exname;
+    if(s.type==='reps')lbl+=' ×'+s.repsCount;
+    var stepLbl='';
+    if(s.exTotal>1)stepLbl=' <span style="color:#aaa">es.'+s.exIdx+'/'+s.exTotal+' g.'+s.rep+'/'+s.total+'</span>';
+    else if(s.total>0)stepLbl=' <span style="color:#aaa">'+s.rep+'/'+s.total+'</span>';
+    var durStr=s.timed?s.dur+'s':(s.estDur?'~'+s.estDur+'s':'—');
+    return '<div class="seq-row" id="seq-'+i+'"><span class="seq-dot dot-'+s.type+'"></span><span style="flex:1">'+lbl+stepLbl+'</span><span style="color:#aaa;font-size:11px">'+durStr+'</span></div>';
+  }).join('');
+}
+function highlightSeq(i){
+  document.querySelectorAll('.seq-row').forEach(function(el){el.classList.remove('active-step');});
+  if(i>=0){var el=document.getElementById('seq-'+i);if(el){el.classList.add('active-step');el.scrollIntoView({block:'nearest',behavior:'smooth'});}}
+}
+function saveWorkout(){
+  if(!blocks.length){alert('Nessun blocco da salvare.');return;}
+  var name=document.getElementById('workout-name').value.trim()||'Allenamento '+new Date().toLocaleDateString('it-IT');
+  var saved=getSaved();saved['w_'+Date.now()]={name:name,blocks:JSON.parse(JSON.stringify(blocks)),createdAt:Date.now()};
+  localStorage.setItem('workouts_v1',JSON.stringify(saved));alert('Salvato: "'+name+'"');
+}
+function getSaved(){try{return JSON.parse(localStorage.getItem('workouts_v1'))||{};}catch(e){return{};}}
+function renderSaved(){
+  var saved=getSaved(),el=document.getElementById('saved-list');
+  var keys=Object.keys(saved).sort(function(a,b){return saved[b].createdAt-saved[a].createdAt;});
+  if(!keys.length){el.innerHTML='<p class="empty">Nessun allenamento salvato</p>';return;}
+  el.innerHTML=keys.map(function(k){
+    var w=saved[k];
+    var tot=buildSteps(w.blocks).reduce(function(a,s){return a+(s.estDur||0);},0);
+    var m=Math.floor(tot/60),s=tot%60;
+    return '<div class="saved-item" data-id="'+k+'"><div style="flex:1"><div class="sname">'+w.name+'</div><div class="sinfo">'+w.blocks.length+' blocchi · ~'+(m?m+'min ':'')+(s?s+'s':'')+'</div></div><button class="btn danger sm del-btn" data-id="'+k+'">🗑</button></div>';
+  }).join('');
+  el.querySelectorAll('.saved-item').forEach(function(item){item.addEventListener('click',function(e){if(e.target.closest('.del-btn'))return;loadWorkout(item.dataset.id);});});
+  el.querySelectorAll('.del-btn').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();deleteWorkout(btn.dataset.id);});});
+}
+function loadWorkout(id){
+  var w=getSaved()[id];if(!w)return;
+  blocks=JSON.parse(JSON.stringify(w.blocks));
+  document.getElementById('workout-name').value=w.name;
+  renderBlocks();showTab('config');
+}
+function deleteWorkout(id){var s=getSaved();delete s[id];localStorage.setItem('workouts_v1',JSON.stringify(s));renderSaved();}
+renderBlocks();
+</script>
+</body>
+</html>

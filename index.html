@@ -45,6 +45,7 @@ h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
 .work-names-toggle{font-size:12px;color:#888;cursor:pointer;text-decoration:underline;margin-bottom:8px;display:inline-block}
 .block-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;min-height:20px}
 .block-item{background:#f5f5f3;border-radius:8px;padding:10px 12px;font-size:13px}
+.block-item.editing{outline:2px solid #1a1a1a;outline-offset:-1px}
 .block-item-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
 .work-badge{background:#EAF3DE;color:#27500A}
@@ -53,8 +54,12 @@ h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
 .reps-badge{background:#F0E6FB;color:#4A1080}
 .block-item .times{font-weight:500}
 .block-item .reps-info{color:#888}
-.block-item .remove{margin-left:auto;cursor:pointer;color:#aaa;font-size:20px;line-height:1;border:none;background:none;padding:0 4px;flex-shrink:0}
-.block-item .remove:hover{color:#c0392b}
+.block-actions{margin-left:auto;display:flex;gap:2px;flex-shrink:0}
+.block-actions button{cursor:pointer;color:#888;font-size:15px;line-height:1;border:none;background:none;padding:2px 4px;border-radius:4px}
+.block-actions button:hover{background:#ececea;color:#1a1a1a}
+.block-actions button.remove:hover{color:#c0392b}
+.block-actions button:disabled{opacity:.3;cursor:default}
+.block-actions button:disabled:hover{background:none;color:#888}
 .block-item .ex-names{font-size:11px;color:#aaa;margin-top:4px;padding-left:2px}
 .saved-list{display:flex;flex-direction:column;gap:8px}
 .saved-item{background:#f5f5f3;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;transition:background .15s}
@@ -76,12 +81,14 @@ h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
 .t-reps-block{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:.2rem 0 .5rem}
 .t-reps-display{font-size:32px;font-weight:600;color:#1a1a1a;font-variant-numeric:tabular-nums;line-height:1}
 .t-reps-unit{font-size:16px;color:#888;font-weight:400}
-.t-next-hint{font-size:12px;color:#aaa;margin-bottom:.6rem;min-height:16px}
 .t-time{font-size:80px;font-weight:400;line-height:1;font-variant-numeric:tabular-nums;color:#1a1a1a;margin-bottom:.75rem}
 .t-time.pulse{animation:blink .12s ease-out}
 @keyframes blink{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
 .progress-wrap{background:#ececea;border-radius:20px;height:7px;overflow:hidden;margin-bottom:.5rem}
 .progress-fill{height:100%;border-radius:20px;background:#1a1a1a}
+.t-next-box{display:flex;align-items:center;justify-content:center;gap:8px;background:#ececea;border-radius:8px;padding:8px 12px;margin-bottom:.6rem;font-size:13px}
+.t-next-box .lbl{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.t-next-box .val{font-weight:500;color:#1a1a1a}
 .t-totale{font-size:12px;color:#aaa;margin-bottom:1.1rem}
 .ctrl-row{display:flex;gap:10px;justify-content:center;margin-bottom:.25rem}
 .ctrl-btn{width:52px;height:52px;border-radius:50%;border:1px solid #ddd;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#1a1a1a;transition:background .15s}
@@ -98,6 +105,8 @@ h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
 .name-row input{flex:1;padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a}
 .section-title{font-size:15px;font-weight:500;margin-bottom:.75rem}
 .h-sep{border:none;border-top:1px solid #eee;margin:1rem 0}
+.form-title{font-size:15px;font-weight:500;margin-bottom:.75rem;display:flex;align-items:center;gap:8px}
+.form-title .editing-tag{font-size:11px;font-weight:600;background:#ececea;color:#666;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.04em}
 </style>
 </head>
 <body>
@@ -114,7 +123,7 @@ h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
       <div class="name-row">
         <input id="workout-name" type="text" placeholder="Nome allenamento (es. HIIT mattina)" />
       </div>
-      <p class="section-title">Aggiungi blocco</p>
+      <p class="form-title" id="form-title">Aggiungi blocco</p>
       <div class="row">
         <label>Tipo</label>
         <select id="block-type" onchange="toggleBlockOpts()">
@@ -153,8 +162,12 @@ h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
       <div id="recover-opts" style="display:none">
         <div class="row"><label>Durata (sec)</label><input type="number" id="b-recover" value="60" min="1" max="999"/></div>
       </div>
-      <button class="btn primary" onclick="addBlock()">+ Aggiungi blocco</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn primary" id="form-submit-btn" onclick="submitBlockForm()">+ Aggiungi blocco</button>
+        <button class="btn" id="form-cancel-btn" onclick="cancelEdit()" style="display:none">Annulla</button>
+      </div>
     </div>
+
     <div class="card">
       <p class="section-title">Sequenza</p>
       <div id="block-list" class="block-list"></div>
@@ -171,6 +184,13 @@ h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
     <div class="card">
       <p class="section-title">Allenamenti salvati</p>
       <div id="saved-list" class="saved-list"></div>
+      <hr class="h-sep">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="exportWorkouts()">⬇ Esporta tutto</button>
+        <button class="btn" onclick="document.getElementById('import-file').click()">⬆ Importa</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none" onchange="importWorkouts(this.files[0])"/>
+      </div>
+      <p style="font-size:11px;color:#aaa;margin-top:8px">Esporta un file con tutte le configurazioni salvate per trasferirlo su un altro dispositivo, poi importalo lì.</p>
     </div>
   </div>
 
@@ -189,10 +209,13 @@ h1{font-size:20px;font-weight:600;margin-bottom:1.25rem}
           <span id="t-reps-num" class="t-reps-display">—</span>
           <span class="t-reps-unit">reps</span>
         </div>
-        <div id="t-next-hint" class="t-next-hint"></div>
         <button class="btn done-btn" onclick="completeReps()">✓ Completato</button>
       </div>
       <div class="progress-wrap"><div id="t-bar" class="progress-fill" style="width:0%"></div></div>
+      <div id="t-next-box" class="t-next-box">
+        <span class="lbl">Prossimo</span>
+        <span id="t-next-val" class="val">—</span>
+      </div>
       <div id="t-totale" class="t-totale">Tempo totale rimanente: —</div>
       <div class="ctrl-row">
         <button class="ctrl-btn" onclick="skipStep()" title="Salta">⏭</button>
@@ -215,6 +238,7 @@ var audioCtx=null,wnVisible=false;
 var stepStartTs=null,stepDurMs=0;
 var wakeLock=null,inRepsPhase=false;
 var repsStepStartTs=null;
+var editingIndex=-1;
 
 function toggleBlockOpts(){
   var t=document.getElementById('block-type').value;
@@ -247,10 +271,25 @@ function getWorkNames(){
   var inputs=document.getElementById('wn-box').querySelectorAll('input');
   var out=[];inputs.forEach(function(el){out.push(el.value.trim());});return out;
 }
-function addExercise(){
+function setWorkNames(names){
+  wnVisible=true;
+  document.getElementById('wn-box').style.display='';
+  document.querySelector('.work-names-toggle').textContent='▾ Nomi esercizi per ogni work (opzionale)';
+  var reps=parseInt(document.getElementById('b-reps').value)||1;
+  var box=document.getElementById('wn-box');box.innerHTML='';
+  for(var i=0;i<reps;i++){
+    var div=document.createElement('div');div.className='wn-row';
+    var lbl=document.createElement('label');lbl.textContent='Work '+(i+1);
+    var inp=document.createElement('input');inp.type='text';inp.placeholder='Esercizio '+(i+1);inp.value=(names&&names[i])?names[i]:'';
+    div.appendChild(lbl);div.appendChild(inp);box.appendChild(div);
+  }
+}
+function addExercise(name,reps){
   var list=document.getElementById('c-ex-list');
   var row=document.createElement('div');row.className='ex-row';
   row.innerHTML='<input type="text" placeholder="Nome esercizio"/><input type="number" value="10" min="1" max="999"/><span class="ex-lbl">reps</span><button class="rm-ex" onclick="removeExercise(this)">×</button>';
+  if(name!==undefined)row.querySelector('input[type=text]').value=name;
+  if(reps!==undefined)row.querySelector('input[type=number]').value=reps;
   list.appendChild(row);
   row.querySelectorAll('input').forEach(function(inp){inp.addEventListener('input',updateEstDur);});
   updateEstDur();
@@ -308,61 +347,141 @@ function showTab(t){
   });
   if(t==='saved')renderSaved();
 }
-function addBlock(){
+function resetForm(){
+  document.getElementById('block-type').value='interval';
+  document.getElementById('b-work').value=20;
+  document.getElementById('b-rest').value=10;
+  document.getElementById('b-reps').value=4;
+  wnVisible=false;
+  document.getElementById('wn-box').innerHTML='';
+  document.getElementById('wn-box').style.display='none';
+  document.querySelector('.work-names-toggle').textContent='▸ Nomi esercizi per ogni work (opzionale)';
+  document.getElementById('c-ex-list').innerHTML='';
+  document.getElementById('b-c-sets').value=3;
+  document.getElementById('b-c-rest').value=60;
+  document.getElementById('b-c-duration').value=90;
+  document.getElementById('b-recover').value=60;
+  toggleBlockOpts();
+}
+function submitBlockForm(){
   var type=document.getElementById('block-type').value;
+  var newBlock;
   if(type==='interval'){
-    blocks.push({type:'interval',
+    newBlock={type:'interval',
       work:parseInt(document.getElementById('b-work').value)||20,
       rest:parseInt(document.getElementById('b-rest').value)||10,
       reps:parseInt(document.getElementById('b-reps').value)||4,
-      names:getWorkNames()});
+      names:getWorkNames()};
   }else if(type==='circuit'){
     var exercises=getExercises();
     if(!exercises.length){alert('Aggiungi almeno un esercizio al circuito.');return;}
-    blocks.push({type:'circuit',exercises:exercises,
+    newBlock={type:'circuit',exercises:exercises,
       sets:parseInt(document.getElementById('b-c-sets').value)||3,
       rest:parseInt(document.getElementById('b-c-rest').value)||60,
-      duration:parseInt(document.getElementById('b-c-duration').value)||90});
+      duration:parseInt(document.getElementById('b-c-duration').value)||90};
   }else{
-    blocks.push({type:'recover',dur:parseInt(document.getElementById('b-recover').value)||60});
+    newBlock={type:'recover',dur:parseInt(document.getElementById('b-recover').value)||60};
   }
+  if(editingIndex>=0){
+    blocks[editingIndex]=newBlock;
+    editingIndex=-1;
+    document.getElementById('form-title').innerHTML='Aggiungi blocco';
+    document.getElementById('form-submit-btn').textContent='+ Aggiungi blocco';
+    document.getElementById('form-cancel-btn').style.display='none';
+  }else{
+    blocks.push(newBlock);
+  }
+  resetForm();
+  renderBlocks();
+}
+function editBlock(i){
+  editingIndex=i;
+  var b=blocks[i];
+  document.getElementById('block-type').value=b.type;
+  toggleBlockOpts();
+  if(b.type==='interval'){
+    document.getElementById('b-work').value=b.work;
+    document.getElementById('b-rest').value=b.rest;
+    document.getElementById('b-reps').value=b.reps;
+    if(b.names&&b.names.some(function(n){return n;})) setWorkNames(b.names);
+  }else if(b.type==='circuit'){
+    document.getElementById('c-ex-list').innerHTML='';
+    b.exercises.forEach(function(ex){addExercise(ex.name,ex.reps);});
+    document.getElementById('b-c-sets').value=b.sets;
+    document.getElementById('b-c-rest').value=b.rest;
+    document.getElementById('b-c-duration').value=b.duration;
+  }else{
+    document.getElementById('b-recover').value=b.dur;
+  }
+  document.getElementById('form-title').innerHTML='Modifica blocco <span class="editing-tag">In modifica</span>';
+  document.getElementById('form-submit-btn').textContent='✓ Aggiorna blocco';
+  document.getElementById('form-cancel-btn').style.display='';
+  document.getElementById('tab-config').scrollIntoView({block:'start',behavior:'smooth'});
+}
+function cancelEdit(){
+  editingIndex=-1;
+  document.getElementById('form-title').innerHTML='Aggiungi blocco';
+  document.getElementById('form-submit-btn').textContent='+ Aggiungi blocco';
+  document.getElementById('form-cancel-btn').style.display='none';
+  resetForm();
+}
+function moveBlock(i,dir){
+  var j=i+dir;
+  if(j<0||j>=blocks.length)return;
+  var tmp=blocks[i];blocks[i]=blocks[j];blocks[j]=tmp;
+  if(editingIndex===i)editingIndex=j;else if(editingIndex===j)editingIndex=i;
   renderBlocks();
 }
 function renderBlocks(){
   var el=document.getElementById('block-list');el.innerHTML='';
   if(!blocks.length){el.innerHTML='<p class="empty">Nessun blocco aggiunto</p>';return;}
   blocks.forEach(function(b,i){
-    var div=document.createElement('div');div.className='block-item';
+    var div=document.createElement('div');div.className='block-item'+(i===editingIndex?' editing':'');
+    var actions='<div class="block-actions">'+
+      '<button class="up" title="Sposta su" '+(i===0?'disabled':'')+'>▲</button>'+
+      '<button class="down" title="Sposta giù" '+(i===blocks.length-1?'disabled':'')+'>▼</button>'+
+      '<button class="edit" title="Modifica">✏️</button>'+
+      '<button class="remove" title="Rimuovi">×</button>'+
+      '</div>';
     if(b.type==='interval'){
       var hasNames=b.names&&b.names.some(function(n){return n;});
       var nameList='';
       if(hasNames){nameList='<div class="ex-names">';for(var r=0;r<b.reps;r++){var n=(b.names&&b.names[r])?b.names[r]:'—';nameList+='<span style="margin-right:8px">W'+(r+1)+': '+n+'</span>';}nameList+='</div>';}
-      div.innerHTML='<div class="block-item-row"><span class="badge work-badge">work</span><span class="badge rest-badge">rest</span><span class="times">'+b.work+'s + '+b.rest+'s</span><span class="reps-info">× '+b.reps+'</span><button class="remove">×</button></div>'+nameList;
+      div.innerHTML='<div class="block-item-row"><span class="badge work-badge">work</span><span class="badge rest-badge">rest</span><span class="times">'+b.work+'s + '+b.rest+'s</span><span class="reps-info">× '+b.reps+'</span>'+actions+'</div>'+nameList;
     }else if(b.type==='circuit'){
       var exStr=b.exercises.map(function(e){return (e.name||'Esercizio')+' ×'+e.reps;}).join(' · ');
       div.innerHTML='<div class="block-item-row"><span class="badge reps-badge">circuito</span>'+
         '<span class="times">'+b.sets+' giri</span>'+
         '<span class="reps-info" style="font-size:11px">rec '+b.rest+'s · ~'+b.duration+'s/giro</span>'+
-        '<button class="remove">×</button></div>'+
+        actions+'</div>'+
         '<div class="ex-names">'+exStr+'</div>';
     }else{
-      div.innerHTML='<div class="block-item-row"><span class="badge recover-badge">long rest</span><span class="times">'+b.dur+'s</span><button class="remove">×</button></div>';
+      div.innerHTML='<div class="block-item-row"><span class="badge recover-badge">long rest</span><span class="times">'+b.dur+'s</span>'+actions+'</div>';
     }
     div.querySelector('.remove').addEventListener('click',function(){removeBlock(i);});
+    div.querySelector('.edit').addEventListener('click',function(){editBlock(i);});
+    var upBtn=div.querySelector('.up'),downBtn=div.querySelector('.down');
+    if(!upBtn.disabled)upBtn.addEventListener('click',function(){moveBlock(i,-1);});
+    if(!downBtn.disabled)downBtn.addEventListener('click',function(){moveBlock(i,1);});
     el.appendChild(div);
   });
 }
-function removeBlock(i){blocks.splice(i,1);renderBlocks();}
-function clearBlocks(){blocks=[];renderBlocks();}
+function removeBlock(i){
+  blocks.splice(i,1);
+  if(editingIndex===i)cancelEdit();
+  else if(editingIndex>i)editingIndex--;
+  renderBlocks();
+}
+function clearBlocks(){blocks=[];cancelEdit();renderBlocks();}
 function buildSteps(bks){
   var s=[];
-  s.push({type:'countdown',dur:10,estDur:10,exname:'Preparati',repsCount:0,rep:0,total:0,exIdx:0,exTotal:0,timed:true,nextHint:''});
+  s.push({type:'countdown',dur:10,estDur:10,exname:'Preparati',repsCount:0,rep:0,total:0,exIdx:0,exTotal:0,timed:true});
   bks.forEach(function(b){
     if(b.type==='interval'){
       for(var r=0;r<b.reps;r++){
         var exname=(b.names&&b.names[r])?b.names[r]:'';
-        s.push({type:'work',dur:b.work,estDur:b.work,exname:exname,repsCount:0,rep:r+1,total:b.reps,exIdx:0,exTotal:0,timed:true,nextHint:''});
-        if(b.rest>0)s.push({type:'rest',dur:b.rest,estDur:b.rest,exname:'',repsCount:0,rep:r+1,total:b.reps,exIdx:0,exTotal:0,timed:true,nextHint:''});
+        s.push({type:'work',dur:b.work,estDur:b.work,exname:exname,repsCount:0,rep:r+1,total:b.reps,exIdx:0,exTotal:0,timed:true});
+        if(b.rest>0)s.push({type:'rest',dur:b.rest,estDur:b.rest,exname:'',repsCount:0,rep:r+1,total:b.reps,exIdx:0,exTotal:0,timed:true});
       }
     }else if(b.type==='circuit'){
       var nEx=b.exercises.length;
@@ -370,17 +489,15 @@ function buildSteps(bks){
       for(var gi=0;gi<b.sets;gi++){
         for(var ei=0;ei<nEx;ei++){
           var ex=b.exercises[ei];
-          var nextEx=b.exercises[ei+1];
-          var nextHint=nextEx?'Prossimo: '+(nextEx.name||'Esercizio')+' ×'+nextEx.reps:'';
           s.push({type:'reps',dur:0,estDur:singleEst,exname:(ex.name||'Esercizio'),repsCount:ex.reps,
-            rep:gi+1,total:b.sets,exIdx:ei+1,exTotal:nEx,timed:false,nextHint:nextHint});
+            rep:gi+1,total:b.sets,exIdx:ei+1,exTotal:nEx,timed:false});
         }
         if(b.rest>0&&gi<b.sets-1)
           s.push({type:'recover',dur:b.rest,estDur:b.rest,exname:'Recupero giro '+(gi+1)+'/'+b.sets,
-            repsCount:0,rep:gi+1,total:b.sets,exIdx:0,exTotal:0,timed:true,nextHint:''});
+            repsCount:0,rep:gi+1,total:b.sets,exIdx:0,exTotal:0,timed:true});
       }
     }else{
-      s.push({type:'recover',dur:b.dur,estDur:b.dur,exname:'',repsCount:0,rep:0,total:0,exIdx:0,exTotal:0,timed:true,nextHint:''});
+      s.push({type:'recover',dur:b.dur,estDur:b.dur,exname:'',repsCount:0,rep:0,total:0,exIdx:0,exTotal:0,timed:true});
     }
   });
   return s;
@@ -391,6 +508,13 @@ function calcTotalRemaining(){
   var current=s.timed?Math.max(0,timeLeft):(repsStepStartTs!==null?Math.max(0,(s.estDur||0)-(performance.now()-repsStepStartTs)/1000):(s.estDur||0));
   var future=0;for(var i=currentStep+1;i<steps.length;i++)future+=(steps[i].estDur||0);
   return current+future;
+}
+function stepLabel(s){
+  var lbl={work:'WORK',rest:'REST',recover:'RECUPERO',reps:'REPS',countdown:'PARTENZA'}[s.type]||s.type;
+  if(s.exname)lbl+=' — '+s.exname;
+  if(s.type==='reps')lbl+=' ×'+s.repsCount;
+  if(s.timed)lbl+=' ('+s.dur+'s)';
+  return lbl;
 }
 function startTimer(){
   if(!blocks.length){alert('Aggiungi almeno un blocco prima di avviare.');return;}
@@ -418,6 +542,7 @@ function endWorkout(){
   document.getElementById('reps-view').style.display='none';
   document.getElementById('t-time').textContent='00:00';
   document.getElementById('t-bar').style.width='100%';
+  document.getElementById('t-next-box').style.display='none';
   document.getElementById('t-totale').textContent='Allenamento completato';
   document.getElementById('play-btn').textContent='▶';
   playTransition('done');highlightSeq(-1);
@@ -444,11 +569,18 @@ function updateTimerUI(fraction){
     document.getElementById('timed-view').style.display='none';
     document.getElementById('reps-view').style.display='';
     document.getElementById('t-reps-num').textContent=s.repsCount;
-    document.getElementById('t-next-hint').textContent=s.nextHint||'';
     if(s.estDur>0&&repsStepStartTs!==null){
       var elap=(performance.now()-repsStepStartTs)/1000;
       document.getElementById('t-bar').style.width=Math.min(elap/s.estDur*100,100).toFixed(2)+'%';
     }else{document.getElementById('t-bar').style.width='0%';}
+  }
+  var nextBox=document.getElementById('t-next-box');
+  if(currentStep+1<steps.length){
+    nextBox.style.display='';
+    document.getElementById('t-next-val').textContent=stepLabel(steps[currentStep+1]);
+  }else{
+    nextBox.style.display='';
+    document.getElementById('t-next-val').textContent='Fine allenamento 🎉';
   }
   document.getElementById('t-totale').textContent='Tempo totale rimanente: ~'+fmtTime(calcTotalRemaining());
 }
@@ -508,6 +640,7 @@ function resetTimer(){
   running=false;cancelAnimationFrame(rafId);rafLoop._lastBip=-1;
   releaseWakeLock();inRepsPhase=false;repsStepStartTs=null;
   document.getElementById('play-btn').textContent='▶';
+  document.getElementById('t-next-box').style.display='';
   if(steps.length){currentStep=0;loadStep(0,false);renderSeqPreview();}
 }
 function renderSeqPreview(){
@@ -552,9 +685,38 @@ function loadWorkout(id){
   var w=getSaved()[id];if(!w)return;
   blocks=JSON.parse(JSON.stringify(w.blocks));
   document.getElementById('workout-name').value=w.name;
+  cancelEdit();
   renderBlocks();showTab('config');
 }
 function deleteWorkout(id){var s=getSaved();delete s[id];localStorage.setItem('workouts_v1',JSON.stringify(s));renderSaved();}
+function exportWorkouts(){
+  var saved=getSaved();
+  if(!Object.keys(saved).length){alert('Nessun allenamento da esportare.');return;}
+  var blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='workout_timer_backup.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function importWorkouts(file){
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var imported=JSON.parse(e.target.result);
+      var saved=getSaved();
+      var count=0;
+      Object.keys(imported).forEach(function(k){saved[k]=imported[k];count++;});
+      localStorage.setItem('workouts_v1',JSON.stringify(saved));
+      renderSaved();
+      alert('Importati '+count+' allenamenti!');
+    }catch(err){alert('File non valido.');}
+  };
+  reader.readAsText(file);
+  document.getElementById('import-file').value='';
+}
+resetForm();
 renderBlocks();
 </script>
 </body>
